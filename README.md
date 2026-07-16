@@ -4,52 +4,71 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
-Evaluation and retrieval-benchmark harness for RAG systems. Prove retrieval and generation quality with numbers instead of vibes.
+Evaluation and retrieval-benchmark harness for RAG systems. Prove retrieval **and** answer quality with numbers instead of vibes.
 
 ## Why evals
 
-Most RAG failures are retrieval failures, not generation failures: the model answers badly because the wrong chunks were fetched, not because it reasoned poorly. Most teams shipping LLM apps have no evals at all, so a retrieval regression ships silently and shows up as "the bot got worse" three weeks later with no way to diagnose it. `ragproof` gives you hit rate, MRR, nDCG, and recall on every retriever change, plus a cost estimate and a drift check, so you catch regressions before users do.
+Most RAG failures are retrieval failures, not generation failures: the model answers badly because the wrong chunks were fetched, not because it reasoned poorly. Most teams shipping LLM apps have no evals at all, so a retrieval regression ships silently and shows up as "the bot got worse" three weeks later with no way to diagnose it. `ragproof` scores retrieval (hit@k, MRR, nDCG, recall), scores the generated answer (faithfulness, relevance), tracks cost, and detects query drift, so you catch regressions before your users do.
 
-## Quickstart
+## Install
 
 ```bash
 git clone https://github.com/tarang-tj/ragproof.git
 cd ragproof
-pip install -e .
-python -m ragproof.demo
+pip install -e .                    # core (offline demo + CLI)
+pip install -e ".[benchmark]"       # + model2vec for keyless BEIR benchmarks
+pip install -e ".[embeddings]"      # + sentence-transformers for real dense/rerank
+pip install -e ".[judge]"           # + anthropic for LLM-as-judge faithfulness
+pip install -e ".[dashboard]"       # + streamlit for the drift dashboard
 ```
 
-No API keys, no downloaded models, no network calls. The demo loads a baked-in 40-document corpus and 24 labeled queries and evaluates three retrievers end to end.
+## CLI
 
-## Demo result (real output, not fabricated)
+```bash
+ragproof demo                                  # offline retrieval demo, no downloads
+ragproof benchmark scifact                     # BEIR benchmark, model2vec dense (keyless)
+ragproof benchmark scifact --embeddings st --rerank   # bge-small + cross-encoder
+ragproof suite scifact nfcorpus                # robustness table across datasets
+ragproof version
+```
+
+## Retrieval quality (offline demo)
+
+`ragproof demo` loads a baked-in 40-document corpus and 24 labeled queries and evaluates three retrievers, no keys or downloads:
 
 ```
-ragproof demo -- 40 docs, 24 labeled queries, fully offline
-
 retriever          hit@3  mrr    ndcg@3  recall@5
 -------------------------------------------------
 sparse (bm25)      0.917  0.849  0.860  0.958
 dense (tfidf+svd)  0.958  0.861  0.886  0.958
 hybrid (+rerank)   1.000  0.882  0.912  1.000
-
-Estimated cost per query (input=1200t, output=250t, embed=20t): $0.007352 (rates: input $3.0/1M, output $15.0/1M, embed $0.1/1M -- update to current pricing)
 ```
 
-Hybrid wins on every metric because sparse and dense retrieval have complementary failure modes: BM25 misses paraphrased queries that share no exact vocabulary with the target document, while the TF-IDF+SVD dense retriever occasionally under-ranks documents that exact-keyword queries should nail. Weighted score fusion recovers both failure modes because a document ranked poorly by one method but well by the other still surfaces in the combined top-k. This is a real, reproducible effect on this specific 40-doc corpus, not a cherry-picked number — run `python -m ragproof.demo` yourself, or read `ragproof/datasets.py` to see which queries are exact-keyword, which are paraphrases, and `tests/test_eval_runner.py::test_hybrid_beats_single_methods_on_demo_dataset` for the regression guard that keeps this claim honest.
+Hybrid wins because sparse and dense retrieval have complementary failure modes: BM25 misses paraphrased queries, dense misses exact-keyword ones, and score fusion recovers both. `tests/test_eval_runner.py::test_hybrid_beats_single_methods_on_demo_dataset` locks the claim in.
 
-## Real benchmark: BEIR/scifact (real embeddings, real qrels)
+## Answer quality: faithfulness and relevance
 
-Beyond the offline toy demo, `ragproof` runs on the standard [BEIR/scifact](https://github.com/beir-cellar/beir) IR benchmark: 5,183 documents and 300 test queries with human relevance judgments. Dense retrieval uses [model2vec](https://github.com/MinishLab/model2vec) static embeddings (real semantic vectors, CPU only, no API key), so the whole benchmark reproduces without a GPU.
+Retrieval metrics say the right context was fetched. They say nothing about the answer the LLM then wrote. `ragproof.generation` scores that:
 
-```bash
-pip install -e ".[benchmark]"
-python -m ragproof.benchmarks.scifact
+- **Faithfulness** — the fraction of the answer's sentences supported by the retrieved context. Low = hallucination.
+- **Answer relevance** — how on-topic the answer is to the question.
+
+Two backends: a keyless embedding heuristic (default) and a Claude LLM-as-judge (`[judge]` extra) for fine-grained factual entailment.
+
+```python
+from ragproof.generation import evaluate_answer
+from ragproof.benchmarks.beir import model2vec_embedder
+embed = model2vec_embedder()
+evaluate_answer(question, answer, retrieved_contexts, embed)
+# -> {"faithfulness": 1.0, "answer_relevance": 0.71}
 ```
+
+## Benchmarks on real data
+
+### BEIR/scifact (model2vec dense, keyless, reproduces on a laptop)
 
 ```
 BEIR/scifact -- 5183 docs, 300 test queries, real qrels
-dense = model2vec minishlab/potion-base-8M static embeddings (CPU, no API key)
-
 retriever             hit@3  mrr@10  ndcg@10  recall@10
 --------------------------------------------------------
 bm25                  0.590   0.524    0.560      0.686
@@ -57,63 +76,97 @@ dense (model2vec)     0.520   0.467    0.506      0.662
 hybrid                0.633   0.576    0.609      0.731
 ```
 
-Hybrid fusion lifts NDCG@10 from 0.560 (BM25) to 0.609 and hit@3 from 0.590 to 0.633 — the same complementary-failure-mode effect as the toy demo, now on a real benchmark. Two honest caveats: BM25 here is untuned `rank_bm25` (a tuned Anserini BM25 scores ~0.66 NDCG@10 on scifact), and model2vec static embeddings trade some quality for CPU speed, so a real sentence-transformer or Voyage embedding would push the dense number higher. The point is the relative hybrid gain and that the whole thing reproduces on a laptop.
+Hybrid fusion lifts NDCG@10 from 0.560 (BM25) to 0.609. Honest caveat: BM25 here is untuned `rank_bm25` (a tuned Anserini BM25 scores ~0.66), and model2vec static embeddings trade quality for CPU speed — the point is the relative hybrid gain and full reproducibility without a GPU.
 
-## Metrics explained
+### Stronger embeddings (bge-small + cross-encoder rerank)
 
-- **hit@k** — did at least one relevant doc land in the top k? Binary, per query.
-- **precision@k** — what fraction of the top k are relevant.
-- **recall@k** — what fraction of all relevant docs were found in the top k.
-- **MRR** — reciprocal rank of the first relevant doc (1/rank), full ranked list.
-- **nDCG@k** — position-weighted relevance, normalized against the ideal ranking. Rewards putting relevant docs earlier, not just anywhere in the top k.
+`ragproof benchmark scifact --embeddings st --rerank` swaps in a real sentence-transformer (`BAAI/bge-small-en-v1.5`) and a cross-encoder reranker (`ms-marco-MiniLM-L-6-v2`). This is the production-shaped path; it needs the `[embeddings]` extra and pushes the dense and reranked numbers well above the static-embedding baseline.
 
-All five are pure functions in `ragproof/metrics.py`, unit tested against hand-computed values in `tests/test_metrics.py`.
+### Robustness across datasets
 
-## What's real vs. stand-in
+`ragproof suite scifact nfcorpus` — hybrid wins on both:
 
-- `SparseRetriever` — real BM25 (via `rank_bm25`). No caveats.
-- `DenseRetriever` — **stand-in**: TF-IDF followed by TruncatedSVD (LSA), not a real semantic embedding model. It exists so the demo runs fully offline with zero downloads. It captures some latent co-occurrence structure but is not comparable to a real embedding model like Voyage or OpenAI's.
-- `HybridRetriever` — real weighted score fusion (min-max normalized per query, then linearly combined). The optional reranker is also a **stand-in**: a lexical/dense blend over the shortlist, not a real cross-encoder.
-- `drift.py` — real math: cosine distance between query-embedding centroids, and PSI (Population Stability Index) on a 1D projection. Both are standard, correct formulas, just run against the stand-in embeddings above.
-- `cost.py` — real arithmetic against a rate table you must keep current (see `DEFAULT_RATES` — marked "update to current pricing").
+```
+Robustness -- NDCG@10 across datasets (dense = model2vec)
+retriever                  scifact    nfcorpus
+----------------------------------------------
+bm25                         0.560       0.267
+dense (model2vec)            0.506       0.244
+hybrid                       0.609       0.293
+```
 
-## Wire your own stack
+### SyllabusAI domain (representative Q&A)
 
-`ragproof/retrievers_pgvector_claude.py` is a clearly-marked integration stub (not executed by the demo or tests) showing the production seam: Supabase pgvector for similarity search, Claude for generation, behind the exact same `Retriever` interface (`retrieve(query, top_k)` / `score(query)`) used by every retriever in this repo. Point `eval_runner.evaluate_retriever()` at it once you fill in your Supabase/Anthropic/Voyage keys and it just works — no changes to metrics, eval_runner, or drift code.
+`ragproof.benchmarks.syllabus` evaluates on the actual problem behind [SyllabusAI](https://syllabusai.net) — answering student questions from course syllabi — using a hand-labeled representative set (the live corpus has no ground-truth labels; point a pgvector retriever at it to run on real data):
+
+```
+SyllabusAI domain eval -- 12 syllabus sections, 16 labeled questions
+retriever             hit@3  mrr@5  ndcg@5  recall@5
+----------------------------------------------------
+bm25                  0.625  0.622   0.653     0.750
+dense (model2vec)     0.875  0.830   0.872     1.000
+hybrid                0.875  0.762   0.805     0.938
+
+Answer faithfulness (context = CS 250 grading section):
+  grounded answer     -> 1.00
+  hallucinated answer -> 0.00
+```
+
+Note the flip from scifact: on paraphrased student questions, **dense retrieval beats BM25** because the questions rarely share vocabulary with the syllabus text. The faithfulness check cleanly separates a grounded answer from a hallucinated one.
+
+## Drift dashboard
+
+```bash
+streamlit run ragproof/dashboard.py
+```
+
+Paste a baseline window of queries and a current window; the dashboard embeds both and runs drift detection (PSI + centroid distance) so you can see when production traffic has wandered away from your eval set and your metrics have gone stale.
+
+## Wire your own stack (pgvector + Claude)
+
+`ragproof/retrievers_pgvector_claude.py` is a clearly-marked integration stub showing the production seam: Supabase pgvector for retrieval, Claude for generation, behind the same `Retriever` interface every retriever here uses. Point `eval_runner.evaluate_retriever()` at it once you fill in your keys.
+
+## What's real vs stand-in
+
+- `SparseRetriever` — real BM25 (`rank_bm25`).
+- `DenseRetriever` — TF-IDF+SVD stand-in for the offline demo; use `ragproof.embeddings.sentence_transformer_embedder` (`[embeddings]`) for real semantic vectors, or model2vec (`[benchmark]`) for a keyless middle ground.
+- Reranker — a lexical/dense blend in the demo; `ragproof.embeddings.cross_encoder_reranker` is a real cross-encoder.
+- `generation.faithfulness` — real embedding-support heuristic; `ClaudeJudge` for entailment-grade scoring.
+- `drift.py`, `cost.py` — real math (PSI + centroid cosine; token/$ against a configurable rate table).
 
 ## Project layout
 
 ```
 ragproof/
-  metrics.py                       hit@k, recall@k, precision@k, mrr, ndcg@k
-  cost.py                          token + $ estimator, configurable rate table
-  retrievers.py                    Sparse (BM25), Dense (TF-IDF+SVD stand-in), Hybrid (+rerank)
-  eval_runner.py                   run one retriever or compare several, side-by-side table
-  drift.py                         centroid cosine distance + PSI drift detection
-  datasets.py                      baked-in offline demo corpus/queries + load_beir() stub
-  demo.py                          python -m ragproof.demo
-  retrievers_pgvector_claude.py    integration stub: Supabase pgvector + Claude
-tests/
-  test_metrics.py                  hand-computed expected values for every metric
-  test_eval_runner.py               smoke tests + hybrid-wins regression guard
-  test_cost.py, test_drift.py, test_retrievers.py
+  metrics.py          hit@k, recall@k, precision@k, mrr, ndcg@k
+  cost.py             token + $ estimator
+  retrievers.py       Sparse (BM25), Dense (stand-in), Hybrid (+rerank)
+  embeddings.py       real sentence-transformer embedder + cross-encoder reranker
+  generation.py       faithfulness + answer relevance (+ Claude judge)
+  eval_runner.py      run / compare retrievers
+  drift.py            centroid cosine + PSI drift detection
+  dashboard.py        Streamlit drift dashboard
+  cli.py              ragproof CLI
+  benchmarks/
+    beir.py           generalized BEIR engine (any dataset, pluggable embedder)
+    scifact.py        scifact entrypoint
+    syllabus.py       SyllabusAI-domain retrieval + faithfulness eval
+  retrievers_pgvector_claude.py   integration stub
+tests/                metrics, eval_runner, cost, drift, retrievers, generation, cli
 ```
 
 ## Roadmap
 
-- More BEIR sets (nfcorpus, fiqa, etc.) — scifact is done in `ragproof/benchmarks/scifact.py`; the `load_beir()` helper in `datasets.py` generalizes it next.
-- Live evaluation against a real Claude-generated answer (faithfulness/groundedness scoring, not just retrieval metrics).
-- A small drift dashboard that runs `drift.py` on a rolling window of production queries and alerts on PSI threshold breaches.
-- Swap in a real embedding model (Voyage/Claude) as a second `DenseRetriever` implementation for an apples-to-apples comparison against the TF-IDF+SVD stand-in.
+- More BEIR datasets in the suite (fiqa, trec-covid).
+- Live Claude-generated-answer eval end to end (retrieve -> generate -> score) in one command.
+- Ship the drift dashboard on a rolling production-query window with alerting.
 
-## Running tests
+## Tests and publishing
 
 ```bash
-pip install -e ".[dev]"
-pytest -q
+pip install -e ".[dev]" && pytest -q      # 54 tests, no mocks, no network
+python -m build && twine upload dist/*    # publish to PyPI (needs a PyPI token)
 ```
-
-44 tests, all passing, no mocks, no network calls.
 
 ## License
 

@@ -11,3 +11,5 @@ venv/
 .env
 .DS_Store
 data/
+pkgout/
+*.egg-info/
