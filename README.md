@@ -80,7 +80,18 @@ Hybrid fusion lifts NDCG@10 from 0.560 (BM25) to 0.609. Honest caveat: BM25 here
 
 ### Stronger embeddings (bge-small + cross-encoder rerank)
 
-`ragproof benchmark scifact --embeddings st --rerank` swaps in a real sentence-transformer (`BAAI/bge-small-en-v1.5`) and a cross-encoder reranker (`ms-marco-MiniLM-L-6-v2`). This is the production-shaped path; it needs the `[embeddings]` extra and pushes the dense and reranked numbers well above the static-embedding baseline.
+`ragproof benchmark scifact --embeddings st --rerank` swaps in a real sentence-transformer (`BAAI/bge-small-en-v1.5`) and a cross-encoder reranker (`ms-marco-MiniLM-L-6-v2`):
+
+```
+retriever               hit@3  mrr@10  ndcg@10  recall@10
+----------------------------------------------------------
+bm25                    0.590   0.524    0.560      0.686
+dense (bge-small)       0.727   0.684    0.720      0.845
+hybrid                  0.687   0.627    0.660      0.788
+hybrid + rerank         0.717   0.654    0.681      0.795
+```
+
+A real embedder lifts dense NDCG@10 from 0.506 (model2vec) to **0.720** — the single biggest quality jump in this repo. The honest surprise: on scifact, dense alone beats hybrid and hybrid+rerank, because naive score fusion dilutes a strong dense retriever with a weaker BM25 signal. Fusion helps when the two retrievers are comparably strong (see scifact with model2vec, and the SyllabusAI set below); it hurts when one dominates. That is exactly the kind of thing an eval harness is for.
 
 ### Robustness across datasets
 
