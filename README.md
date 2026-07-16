@@ -9,7 +9,7 @@ Most RAG failures are retrieval failures, not generation failures: the model ans
 ## Quickstart
 
 ```bash
-git clone https://github.com/tarangj/ragproof.git
+git clone https://github.com/tarang-tj/ragproof.git
 cd ragproof
 pip install -e .
 python -m ragproof.demo
@@ -32,6 +32,28 @@ Estimated cost per query (input=1200t, output=250t, embed=20t): $0.007352 (rates
 ```
 
 Hybrid wins on every metric because sparse and dense retrieval have complementary failure modes: BM25 misses paraphrased queries that share no exact vocabulary with the target document, while the TF-IDF+SVD dense retriever occasionally under-ranks documents that exact-keyword queries should nail. Weighted score fusion recovers both failure modes because a document ranked poorly by one method but well by the other still surfaces in the combined top-k. This is a real, reproducible effect on this specific 40-doc corpus, not a cherry-picked number — run `python -m ragproof.demo` yourself, or read `ragproof/datasets.py` to see which queries are exact-keyword, which are paraphrases, and `tests/test_eval_runner.py::test_hybrid_beats_single_methods_on_demo_dataset` for the regression guard that keeps this claim honest.
+
+## Real benchmark: BEIR/scifact (real embeddings, real qrels)
+
+Beyond the offline toy demo, `ragproof` runs on the standard [BEIR/scifact](https://github.com/beir-cellar/beir) IR benchmark: 5,183 documents and 300 test queries with human relevance judgments. Dense retrieval uses [model2vec](https://github.com/MinishLab/model2vec) static embeddings (real semantic vectors, CPU only, no API key), so the whole benchmark reproduces without a GPU.
+
+```bash
+pip install -e ".[benchmark]"
+python -m ragproof.benchmarks.scifact
+```
+
+```
+BEIR/scifact -- 5183 docs, 300 test queries, real qrels
+dense = model2vec minishlab/potion-base-8M static embeddings (CPU, no API key)
+
+retriever             hit@3  mrr@10  ndcg@10  recall@10
+--------------------------------------------------------
+bm25                  0.590   0.524    0.560      0.686
+dense (model2vec)     0.520   0.467    0.506      0.662
+hybrid                0.633   0.576    0.609      0.731
+```
+
+Hybrid fusion lifts NDCG@10 from 0.560 (BM25) to 0.609 and hit@3 from 0.590 to 0.633 — the same complementary-failure-mode effect as the toy demo, now on a real benchmark. Two honest caveats: BM25 here is untuned `rank_bm25` (a tuned Anserini BM25 scores ~0.66 NDCG@10 on scifact), and model2vec static embeddings trade some quality for CPU speed, so a real sentence-transformer or Voyage embedding would push the dense number higher. The point is the relative hybrid gain and that the whole thing reproduces on a laptop.
 
 ## Metrics explained
 
@@ -75,7 +97,7 @@ tests/
 
 ## Roadmap
 
-- Real benchmark support via BEIR (scifact, nfcorpus, etc.) — `load_beir()` is stubbed with a clear TODO.
+- More BEIR sets (nfcorpus, fiqa, etc.) — scifact is done in `ragproof/benchmarks/scifact.py`; the `load_beir()` helper in `datasets.py` generalizes it next.
 - Live evaluation against a real Claude-generated answer (faithfulness/groundedness scoring, not just retrieval metrics).
 - A small drift dashboard that runs `drift.py` on a rolling window of production queries and alerts on PSI threshold breaches.
 - Swap in a real embedding model (Voyage/Claude) as a second `DenseRetriever` implementation for an apples-to-apples comparison against the TF-IDF+SVD stand-in.
