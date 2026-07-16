@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ragproof"
+version = "0.1.0"
+description = "Evaluation and retrieval-benchmark harness for RAG systems"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Tarang Jammalamadaka" }]
+dependencies = [
+    "numpy>=1.24",
+    "scikit-learn>=1.3",
+    "rank_bm25>=0.2.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+integrations = ["anthropic", "supabase", "voyageai"]
+
+[project.urls]
+Repository = "https://github.com/tarangj/ragproof"
+
+[tool.setuptools.packages.find]
+include = ["ragproof*"]
