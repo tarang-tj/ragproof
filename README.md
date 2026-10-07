@@ -12,6 +12,8 @@ Most RAG failures are retrieval failures, not generation failures: the model ans
 
 ## Install
 
+Install from a clone of this repository. This project is not published on PyPI; the `ragproof` package there is an unrelated project by another author, so `pip install ragproof` will not install this code.
+
 ```bash
 git clone https://github.com/tarang-tj/ragproof.git
 cd ragproof
@@ -172,11 +174,10 @@ tests/                metrics, eval_runner, cost, drift, retrievers, generation,
 - Live Claude-generated-answer eval end to end (retrieve -> generate -> score) in one command.
 - Ship the drift dashboard on a rolling production-query window with alerting.
 
-## Tests and publishing
+## Tests
 
 ```bash
 pip install -e ".[dev]" && pytest -q      # 54 tests, no mocks, no network
-python -m build && twine upload dist/*    # publish to PyPI (needs a PyPI token)
 ```
 
 ## License
