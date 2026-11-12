@@ -1,12 +1,12 @@
 # ragvet
 
-> Renamed from `ragproof`: the PyPI name `ragproof` was already claimed by an unrelated package. The Python package, CLI, and imports are now `ragvet`. The GitHub repo itself is still named `ragproof` (renaming it is a separate step), so the URLs below are unchanged.
-
 [![ci](https://github.com/tarang-tj/ragproof/actions/workflows/ci.yml/badge.svg)](https://github.com/tarang-tj/ragproof/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
 Evaluation and retrieval-benchmark harness for RAG systems. Prove retrieval **and** answer quality with numbers instead of vibes.
+
+**Live:** a [monthly leaderboard](#monthly-embedding-leaderboard) of the most-downloaded small embedding models on Hugging Face, each new revision scored on BEIR/scifact by a scheduled GitHub Action.
 
 ## Why evals
 
@@ -14,7 +14,7 @@ Most RAG failures are retrieval failures, not generation failures: the model ans
 
 ## Install
 
-Install from a clone of this repository. This project is not published on PyPI; the `ragproof` package there is an unrelated project by another author, so `pip install ragproof` will not install this code.
+Install from a clone of this repository. This project is not published on PyPI. It was renamed from `ragproof` because a `ragproof` package there is an unrelated project by another author, so `pip install ragproof` will not install this code; the package, CLI and imports are `ragvet`, and the GitHub repo keeps its old name.
 
 ```bash
 git clone https://github.com/tarang-tj/ragproof.git
