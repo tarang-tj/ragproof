@@ -61,6 +61,17 @@ def test_time_budget_stops_new_models_and_each_score_is_saved_as_it_lands():
     assert len(state["current"]) == 3           # the ranking is still refreshed in full
 
 
+def test_a_model_too_slow_for_the_runner_is_skipped_not_scored():
+    assert lb.too_slow(60, 5183, limit=900) == pytest.approx(60 * 5183 / 64)   # ~81 min: skip
+    assert lb.too_slow(5, 5183, limit=900) is None                              # ~7 min: score
+    state = {"scores": {}, "current": lb.candidates(HUB, 2)}
+    state["scores"]["sentence-transformers/all-MiniLM-L6-v2@aaa"] = {"ndcg10": 0.6, "recall10": 0.8}
+    state["scores"]["thenlper/gte-small@eee"] = {"skipped": "projected 81 min", "scored": "2026-11-12"}
+    rows = lb.table(state).splitlines()[2:]
+    assert rows[0].startswith("| 1 ") and "MiniLM" in rows[0]
+    assert rows[1].startswith("| - ") and "too slow for a CPU runner" in rows[1]
+
+
 def test_table_ranks_by_ndcg_and_lists_pending_last():
     scorer, _ = fake_score({"sentence-transformers/all-MiniLM-L6-v2": 0.6, "thenlper/gte-small": 0.7})
     state = {"scores": {}, "current": []}

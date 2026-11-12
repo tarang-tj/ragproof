@@ -60,15 +60,37 @@ def candidates(models: list[dict], top: int) -> list[dict]:
     return out
 
 
+MAX_MODEL_S = 900   # a model projected to need longer than this on a CPU runner is not scored
+PROBE_DOCS = 64
+
+
+def too_slow(seconds_for_probe: float, n_docs: int, limit: float = MAX_MODEL_S) -> float | None:
+    """Projected seconds to embed the corpus, if over the limit; else None."""
+    projected = seconds_for_probe * n_docs / PROBE_DOCS
+    return projected if projected > limit else None
+
+
 def score(model: str, sha: str) -> dict:
-    """Dense-retrieval scores for one pinned model revision on scifact."""
-    from ragvet.benchmarks.beir import run
+    """Dense-retrieval scores for one pinned model revision on scifact.
+
+    Times the model on PROBE_DOCS documents first: one model that is too heavy for a CPU runner
+    must not consume the whole job (a 109M fine-tune once took a run past its 45-minute timeout).
+    """
+    from ragvet.benchmarks.beir import load_beir, run
     from ragvet.embeddings import sentence_transformer_embedder
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    embed = sentence_transformer_embedder(model, revision=sha)
+    corpus, _, _ = load_beir(DATASET)
     t0 = time.monotonic()
-    means = run(DATASET, embed=sentence_transformer_embedder(model, revision=sha), dense_label=model, quiet=True)
+    embed(list(corpus.values())[:PROBE_DOCS])
+    projected = too_slow(time.monotonic() - t0, len(corpus))
+    if projected:
+        return {"skipped": f"projected {projected / 60:.0f} min to embed {len(corpus):,} docs on this CPU", "scored": today}
+    t0 = time.monotonic()
+    means = run(DATASET, embed=embed, dense_label=model, quiet=True)
     hit3, mrr10, ndcg10, rec10 = (round(float(v), 4) for v in means[f"dense ({model})"])
     return {"ndcg10": ndcg10, "mrr10": mrr10, "recall10": rec10, "hit3": hit3,
-            "seconds": round(time.monotonic() - t0), "scored": datetime.now(timezone.utc).strftime("%Y-%m-%d")}
+            "seconds": round(time.monotonic() - t0), "scored": today}
 
 
 def load() -> dict:
@@ -103,13 +125,17 @@ def table(state: dict) -> str:
     rows = []
     for c in state["current"]:
         s = state["scores"].get(f"{c['model']}@{c['sha']}")
-        rows.append((s["ndcg10"] if s else -1, c, s))
+        rows.append((s["ndcg10"] if s and "ndcg10" in s else -1, c, s))
     rows.sort(key=lambda r: (-r[0], r[1]["rank"]))
     lines = ["| # | model | nDCG@10 | recall@10 | params | downloads rank |", "|---|---|---|---|---|---|"]
     for i, (_, c, s) in enumerate(rows, 1):
         link = f"[{c['model']}](https://huggingface.co/{c['model']}/tree/{c['sha']})"
-        vals = f"{s['ndcg10']:.3f} | {s['recall10']:.3f}" if s else "pending | pending"
-        lines.append(f"| {i if s else '-'} | {link} | {vals} | {c['params'] / 1e6:.0f}M | {c['rank']} |")
+        if s and "skipped" in s:
+            vals = "too slow for a CPU runner | -"
+        else:
+            vals = f"{s['ndcg10']:.3f} | {s['recall10']:.3f}" if s else "pending | pending"
+        ranked = bool(s and "ndcg10" in s)
+        lines.append(f"| {i if ranked else '-'} | {link} | {vals} | {c['params'] / 1e6:.0f}M | {c['rank']} |")
     return "\n".join(lines)
 
 

@@ -21,7 +21,9 @@ def sentence_transformer_embedder(model: str = "BAAI/bge-small-en-v1.5",
     """
     from sentence_transformers import SentenceTransformer
 
-    encoder = SentenceTransformer(model, revision=revision)
+    import torch
+    # float32: some Hub checkpoints ship float16 weights, which run very slowly on a CPU.
+    encoder = SentenceTransformer(model, revision=revision, model_kwargs={"torch_dtype": torch.float32})
 
     def embed(texts: Sequence[str]) -> np.ndarray:
         vecs = encoder.encode(list(texts), normalize_embeddings=True,
