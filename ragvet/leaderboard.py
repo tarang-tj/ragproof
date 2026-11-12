@@ -24,7 +24,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path.cwd()  # run from a checkout of the repo: the files below live there, not in site-packages
 DIR = ROOT / "leaderboard"
 RESULTS = DIR / "results.json"
 BOARD = DIR / "LEADERBOARD.md"
@@ -143,6 +143,8 @@ def main(argv=None) -> int:
                     help="start no new model after this many minutes (the workflow times out at 45)")
     a = ap.parse_args(argv)
     before = [p.read_text() if p.exists() else "" for p in (RESULTS, BOARD, README)]
+    if START not in (README.read_text() if README.exists() else ""):  # fail before minutes of scoring
+        raise SystemExit(f"run from the repository root: {README} has no leaderboard markers")
     state = load()
     checked = state.get("checked", "never")
     if not a.offline:
