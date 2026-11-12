@@ -51,6 +51,14 @@
     }
   ],
   "scores": {
+    "intfloat/multilingual-e5-small@614241f622f53c4eeff9890bdc4f31cfecc418b3": {
+      "hit3": 0.6933,
+      "mrr10": 0.6373,
+      "ndcg10": 0.6694,
+      "recall10": 0.8046,
+      "scored": "2026-11-12",
+      "seconds": 510
+    },
     "sentence-transformers/all-MiniLM-L6-v2@1110a243fdf4706b3f48f1d95db1a4f5529b4d41": {
       "hit3": 0.6833,
       "mrr10": 0.6047,
@@ -58,6 +66,22 @@
       "recall10": 0.7833,
       "scored": "2026-11-12",
       "seconds": 75
+    },
+    "sentence-transformers/all-mpnet-base-v2@e8c3b32edf5434bc2275fc9bab85f82640a19130": {
+      "hit3": 0.67,
+      "mrr10": 0.6177,
+      "ndcg10": 0.6557,
+      "recall10": 0.7901,
+      "scored": "2026-11-12",
+      "seconds": 1611
+    },
+    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2@e8f8c211226b894fcb81acc59f3b34ba3efd5f42": {
+      "hit3": 0.47,
+      "mrr10": 0.455,
+      "ndcg10": 0.4837,
+      "recall10": 0.6156,
+      "scored": "2026-11-12",
+      "seconds": 134
     }
   }
 }

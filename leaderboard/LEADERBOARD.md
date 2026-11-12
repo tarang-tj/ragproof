@@ -4,10 +4,10 @@ Dense retrieval on BEIR/scifact (5,183 docs, 300 test queries), no instruction p
 
 | # | model | nDCG@10 | recall@10 | params | downloads rank |
 |---|---|---|---|---|---|
-| 1 | [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/tree/1110a243fdf4706b3f48f1d95db1a4f5529b4d41) | 0.645 | 0.783 | 23M | 1 |
-| - | [sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/tree/e8f8c211226b894fcb81acc59f3b34ba3efd5f42) | pending | pending | 118M | 2 |
-| - | [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2/tree/e8c3b32edf5434bc2275fc9bab85f82640a19130) | pending | pending | 109M | 3 |
-| - | [intfloat/multilingual-e5-small](https://huggingface.co/intfloat/multilingual-e5-small/tree/614241f622f53c4eeff9890bdc4f31cfecc418b3) | pending | pending | 118M | 4 |
+| 1 | [intfloat/multilingual-e5-small](https://huggingface.co/intfloat/multilingual-e5-small/tree/614241f622f53c4eeff9890bdc4f31cfecc418b3) | 0.669 | 0.805 | 118M | 4 |
+| 2 | [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2/tree/e8c3b32edf5434bc2275fc9bab85f82640a19130) | 0.656 | 0.790 | 109M | 3 |
+| 3 | [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/tree/1110a243fdf4706b3f48f1d95db1a4f5529b4d41) | 0.645 | 0.783 | 23M | 1 |
+| 4 | [sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/tree/e8f8c211226b894fcb81acc59f3b34ba3efd5f42) | 0.484 | 0.616 | 118M | 2 |
 | - | [datasocietyco/bge-base-en-v1.5-course-recommender-v5](https://huggingface.co/datasocietyco/bge-base-en-v1.5-course-recommender-v5/tree/2b069eed51ce7bc2beeaa7e3eea1a01c48ef3d29) | pending | pending | 109M | 5 |
 | - | [thenlper/gte-small](https://huggingface.co/thenlper/gte-small/tree/17e1f347d17fe144873b1201da91788898c639cd) | pending | pending | 33M | 6 |
 | - | [sentence-transformers/all-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L12-v2/tree/a50ef00143b4d5391434df20ae11632588ac25be) | pending | pending | 33M | 7 |
