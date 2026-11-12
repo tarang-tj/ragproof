@@ -62,11 +62,11 @@ jobs:
           n=$(gh issue list --state open --search 'in:title "Leaderboard refresh failed"' --json number -q '.[0].number')
           if [ -n "$n" ]; then gh issue close "$n" --comment "Fixed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; fi
       - name: open or update the failure issue
-        if: failure()
+        if: failure() || cancelled()  # a job timeout is "cancelled", and must not be silent
         run: |
           title="Leaderboard refresh failed"
           { echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; echo;
-            echo "Nothing was committed. The leaderboard keeps its last good state."; echo;
+            echo "Nothing was committed by this run. The leaderboard keeps its last committed state."; echo;
             tail -n 40 board.txt 2>/dev/null || echo "No output: the run failed before scoring."; } > failure.md
           n=$(gh issue list --state open --search "in:title \"$title\"" --json number -q '.[0].number')
           if [ -n "$n" ]; then gh issue comment "$n" --body-file failure.md; else gh issue create --title "$title" --body-file failure.md; fi

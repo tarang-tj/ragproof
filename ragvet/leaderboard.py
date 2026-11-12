@@ -75,16 +75,26 @@ def load() -> dict:
     return json.loads(RESULTS.read_text()) if RESULTS.exists() else {"scores": {}, "current": []}
 
 
-def update(state: dict, cands: list[dict], max_new: int, scorer=score) -> list[str]:
-    """Score up to `max_new` unscored revisions; set the current list. Returns models scored."""
-    done = []
+def update(state: dict, cands: list[dict], max_new: int, scorer=score, budget_s: float = float("inf"),
+           on_scored=None, clock=time.monotonic) -> list[str]:
+    """Score up to `max_new` unscored revisions, starting no new one after `budget_s` seconds.
+
+    The budget is what keeps a run inside the workflow's timeout: a job that times out commits
+    nothing. `on_scored(state)` runs after each model (the CLI rewrites the files and logs it).
+    Returns the models scored.
+    """
+    state["current"] = cands
+    start, done = clock(), []
     for c in cands:
         key = f"{c['model']}@{c['sha']}"
-        if key in state["scores"] or len(done) >= max_new:
+        if key in state["scores"]:
             continue
+        if len(done) >= max_new or clock() - start > budget_s:
+            break
         state["scores"][key] = scorer(c["model"], c["sha"])
         done.append(c["model"])
-    state["current"] = cands
+        if on_scored:
+            on_scored(state)
     return done
 
 
@@ -129,13 +139,17 @@ def main(argv=None) -> int:
     ap.add_argument("--max-new", type=int, default=2, help="score at most this many new revisions")
     ap.add_argument("--top", type=int, default=8)
     ap.add_argument("--offline", action="store_true", help="re-render from results.json, no Hub call")
+    ap.add_argument("--budget-min", type=float, default=25,
+                    help="start no new model after this many minutes (the workflow times out at 45)")
     a = ap.parse_args(argv)
     before = [p.read_text() if p.exists() else "" for p in (RESULTS, BOARD, README)]
     state = load()
     checked = state.get("checked", "never")
     if not a.offline:
-        done = update(state, candidates(fetch_models(), a.top), a.max_new)
+        cands = candidates(fetch_models(), a.top)
         checked = state["checked"] = datetime.now(timezone.utc).strftime("%Y-%m")
+        done = update(state, cands, a.max_new, budget_s=a.budget_min * 60,
+                      on_scored=lambda st: (write(st, checked), print("scored", list(st["scores"])[-1], flush=True)))
         print("scored:", ", ".join(done) or "nothing new")
     write(state, checked)
     print(render(state, checked))

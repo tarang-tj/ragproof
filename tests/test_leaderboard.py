@@ -50,6 +50,17 @@ def test_a_scored_revision_is_never_rescored_and_new_ones_are_capped():
     assert calls[-1] == "thenlper/gte-small" and len(calls) == 4   # a new revision is a new score
 
 
+def test_time_budget_stops_new_models_and_each_score_is_saved_as_it_lands():
+    scorer, calls = fake_score({m["id"]: 0.6 for m in HUB})
+    ticks = iter([0, 0, 100, 2000])          # start, before model 1, before model 2, before model 3
+    saved = []
+    state = {"scores": {}, "current": []}
+    done = lb.update(state, lb.candidates(HUB, 8), max_new=9, scorer=scorer, budget_s=1500,
+                     on_scored=lambda st: saved.append(len(st["scores"])), clock=lambda: next(ticks))
+    assert len(done) == 2 and saved == [1, 2]   # third model not started: 2000 s > 1500 s budget
+    assert len(state["current"]) == 3           # the ranking is still refreshed in full
+
+
 def test_table_ranks_by_ndcg_and_lists_pending_last():
     scorer, _ = fake_score({"sentence-transformers/all-MiniLM-L6-v2": 0.6, "thenlper/gte-small": 0.7})
     state = {"scores": {}, "current": []}
