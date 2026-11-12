@@ -60,7 +60,7 @@ def candidates(models: list[dict], top: int) -> list[dict]:
     return out
 
 
-MAX_MODEL_S = 900   # a model projected to need longer than this on a CPU runner is not scored
+MAX_MODEL_S = 1500  # a model projected past this on a CPU runner is not scored (mpnet-base took 1,611 s and fit)
 PROBE_DOCS = 64
 
 
@@ -81,11 +81,14 @@ def score(model: str, sha: str) -> dict:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     embed = sentence_transformer_embedder(model, revision=sha)
     corpus, _, _ = load_beir(DATASET)
+    docs = list(corpus.values())
+    embed(docs[:8])  # warm-up: the first call carries one-time setup and overstated gte-small 2x
     t0 = time.monotonic()
-    embed(list(corpus.values())[:PROBE_DOCS])
+    embed(docs[PROBE_DOCS:2 * PROBE_DOCS])
     projected = too_slow(time.monotonic() - t0, len(corpus))
     if projected:
-        return {"skipped": f"projected {projected / 60:.0f} min to embed {len(corpus):,} docs on this CPU", "scored": today}
+        return {"skipped": f"projected {projected / 60:.0f} min to embed {len(corpus):,} docs on this CPU",
+                "limit_s": MAX_MODEL_S, "scored": today}
     t0 = time.monotonic()
     means = run(DATASET, embed=embed, dense_label=model, quiet=True)
     hit3, mrr10, ndcg10, rec10 = (round(float(v), 4) for v in means[f"dense ({model})"])
@@ -109,8 +112,9 @@ def update(state: dict, cands: list[dict], max_new: int, scorer=score, budget_s:
     start, done = clock(), []
     for c in cands:
         key = f"{c['model']}@{c['sha']}"
-        if key in state["scores"]:
-            continue
+        prev = state["scores"].get(key)
+        if prev and not (prev.get("skipped") and prev.get("limit_s", 0) < MAX_MODEL_S):
+            continue  # scored, or skipped under the current limit; a skip under a lower limit is retried
         if len(done) >= max_new or clock() - start > budget_s:
             break
         state["scores"][key] = scorer(c["model"], c["sha"])
@@ -165,8 +169,8 @@ def main(argv=None) -> int:
     ap.add_argument("--max-new", type=int, default=2, help="score at most this many new revisions")
     ap.add_argument("--top", type=int, default=8)
     ap.add_argument("--offline", action="store_true", help="re-render from results.json, no Hub call")
-    ap.add_argument("--budget-min", type=float, default=25,
-                    help="start no new model after this many minutes (the workflow times out at 45)")
+    ap.add_argument("--budget-min", type=float, default=12,
+                    help="start no new model after this many minutes: ~5 setup + 12 + one model up to 25 fits the 45-minute timeout")
     a = ap.parse_args(argv)
     before = [p.read_text() if p.exists() else "" for p in (RESULTS, BOARD, README)]
     if START not in (README.read_text() if README.exists() else ""):  # fail before minutes of scoring

@@ -72,6 +72,16 @@ def test_a_model_too_slow_for_the_runner_is_skipped_not_scored():
     assert rows[1].startswith("| - ") and "too slow for a CPU runner" in rows[1]
 
 
+def test_a_skip_under_a_lower_limit_is_retried_and_one_under_this_limit_is_not():
+    scorer, calls = fake_score({m["id"]: 0.6 for m in HUB})
+    state = {"scores": {
+        "sentence-transformers/all-MiniLM-L6-v2@aaa": {"skipped": "old", "scored": "x"},          # no limit: retry
+        "thenlper/gte-small@eee": {"skipped": "now", "limit_s": lb.MAX_MODEL_S, "scored": "x"}},  # keep
+        "current": []}
+    lb.update(state, lb.candidates(HUB, 8), max_new=9, scorer=scorer)
+    assert calls == ["sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2"]
+
+
 def test_table_ranks_by_ndcg_and_lists_pending_last():
     scorer, _ = fake_score({"sentence-transformers/all-MiniLM-L6-v2": 0.6, "thenlper/gte-small": 0.7})
     state = {"scores": {}, "current": []}
