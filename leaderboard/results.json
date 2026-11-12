@@ -100,8 +100,12 @@
       "seconds": 134
     },
     "thenlper/gte-small@17e1f347d17fe144873b1201da91788898c639cd": {
+      "hit3": 0.7433,
+      "mrr10": 0.6937,
+      "ndcg10": 0.727,
+      "recall10": 0.8479,
       "scored": "2026-11-12",
-      "skipped": "projected 19 min to embed 5,183 docs on this CPU"
+      "seconds": 867
     }
   }
 }
