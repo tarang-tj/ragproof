@@ -1,0 +1,63 @@
+{
+  "checked": "2026-11",
+  "current": [
+    {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "params": 22713728,
+      "rank": 1,
+      "sha": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    },
+    {
+      "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "params": 117654272,
+      "rank": 2,
+      "sha": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42"
+    },
+    {
+      "model": "sentence-transformers/all-mpnet-base-v2",
+      "params": 109486978,
+      "rank": 3,
+      "sha": "e8c3b32edf5434bc2275fc9bab85f82640a19130"
+    },
+    {
+      "model": "intfloat/multilingual-e5-small",
+      "params": 117654272,
+      "rank": 4,
+      "sha": "614241f622f53c4eeff9890bdc4f31cfecc418b3"
+    },
+    {
+      "model": "datasocietyco/bge-base-en-v1.5-course-recommender-v5",
+      "params": 109482240,
+      "rank": 5,
+      "sha": "2b069eed51ce7bc2beeaa7e3eea1a01c48ef3d29"
+    },
+    {
+      "model": "thenlper/gte-small",
+      "params": 33360512,
+      "rank": 6,
+      "sha": "17e1f347d17fe144873b1201da91788898c639cd"
+    },
+    {
+      "model": "sentence-transformers/all-MiniLM-L12-v2",
+      "params": 33360512,
+      "rank": 7,
+      "sha": "a50ef00143b4d5391434df20ae11632588ac25be"
+    },
+    {
+      "model": "sentence-transformers/all-distilroberta-v1",
+      "params": 82118914,
+      "rank": 8,
+      "sha": "842eaed40bee4d61673a81c92d5689a8fed7a09f"
+    }
+  ],
+  "scores": {
+    "sentence-transformers/all-MiniLM-L6-v2@1110a243fdf4706b3f48f1d95db1a4f5529b4d41": {
+      "hit3": 0.6833,
+      "mrr10": 0.6047,
+      "ndcg10": 0.6451,
+      "recall10": 0.7833,
+      "scored": "2026-11-12",
+      "seconds": 75
+    }
+  }
+}

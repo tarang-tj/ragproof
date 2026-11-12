@@ -33,6 +33,7 @@ ragvet demo                                  # offline retrieval demo, no downlo
 ragvet benchmark scifact                     # BEIR benchmark, model2vec dense (keyless)
 ragvet benchmark scifact --embeddings st --rerank   # bge-small + cross-encoder
 ragvet suite scifact nfcorpus                # robustness table across datasets
+ragvet leaderboard                           # monthly embedding leaderboard
 ragvet version
 ```
 
@@ -96,6 +97,25 @@ hybrid + rerank         0.717   0.654    0.681      0.795
 ```
 
 A real embedder lifts dense NDCG@10 from 0.506 (model2vec) to **0.720** — the single biggest quality jump in this repo. The honest surprise: on scifact, dense alone beats hybrid and hybrid+rerank, because naive score fusion dilutes a strong dense retriever with a weaker BM25 signal. Fusion helps when the two retrievers are comparably strong (see scifact with model2vec, and the SyllabusAI set below); it hurts when one dominates. That is exactly the kind of thing an eval harness is for.
+
+### Monthly embedding leaderboard
+
+`ragvet leaderboard` asks the Hugging Face Hub for today's most-downloaded small embedding models and scores every new revision on scifact. A GitHub Action reruns it on the 15th of each month and commits the result (full table: [leaderboard/LEADERBOARD.md](leaderboard/LEADERBOARD.md)).
+
+<!-- leaderboard:start -->
+Dense retrieval on BEIR/scifact (5,183 docs, 300 test queries), no instruction prefixes, so models trained with query prefixes (e5, bge) score below their model cards. Candidates: the 8 most-downloaded sentence-transformers models on Hugging Face under 150M parameters without custom code, re-checked monthly (last check 2026-11). Each score is pinned to the linked revision. BM25 on the same set: 0.560.
+
+| # | model | nDCG@10 | recall@10 | params | downloads rank |
+|---|---|---|---|---|---|
+| 1 | [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/tree/1110a243fdf4706b3f48f1d95db1a4f5529b4d41) | 0.645 | 0.783 | 23M | 1 |
+| - | [sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/tree/e8f8c211226b894fcb81acc59f3b34ba3efd5f42) | pending | pending | 118M | 2 |
+| - | [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2/tree/e8c3b32edf5434bc2275fc9bab85f82640a19130) | pending | pending | 109M | 3 |
+| - | [intfloat/multilingual-e5-small](https://huggingface.co/intfloat/multilingual-e5-small/tree/614241f622f53c4eeff9890bdc4f31cfecc418b3) | pending | pending | 118M | 4 |
+| - | [datasocietyco/bge-base-en-v1.5-course-recommender-v5](https://huggingface.co/datasocietyco/bge-base-en-v1.5-course-recommender-v5/tree/2b069eed51ce7bc2beeaa7e3eea1a01c48ef3d29) | pending | pending | 109M | 5 |
+| - | [thenlper/gte-small](https://huggingface.co/thenlper/gte-small/tree/17e1f347d17fe144873b1201da91788898c639cd) | pending | pending | 33M | 6 |
+| - | [sentence-transformers/all-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L12-v2/tree/a50ef00143b4d5391434df20ae11632588ac25be) | pending | pending | 33M | 7 |
+| - | [sentence-transformers/all-distilroberta-v1](https://huggingface.co/sentence-transformers/all-distilroberta-v1/tree/842eaed40bee4d61673a81c92d5689a8fed7a09f) | pending | pending | 82M | 8 |
+<!-- leaderboard:end -->
 
 ### Robustness across datasets
 

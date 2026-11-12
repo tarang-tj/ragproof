@@ -4,6 +4,7 @@
     ragvet benchmark scifact            # BEIR benchmark (model2vec dense, keyless)
     ragvet benchmark scifact --embeddings st --rerank   # bge-small + cross-encoder
     ragvet suite scifact nfcorpus       # robustness table across datasets
+    ragvet leaderboard                  # monthly embedding leaderboard (Hub + scifact)
     ragvet version
 """
 from __future__ import annotations
@@ -45,7 +46,14 @@ def main(argv=None) -> int:
     suite.add_argument("--embeddings", choices=["model2vec", "st"], default="model2vec")
 
     sub.add_parser("version", help="print the ragvet version")
+    sub.add_parser("leaderboard", help="monthly embedding leaderboard (see ragvet.leaderboard)",
+                   add_help=False)
 
+    if argv is None:
+        argv = sys.argv[1:]
+    if argv[:1] == ["leaderboard"]:
+        from ragvet.leaderboard import main as board_main
+        return board_main(argv[1:])
     args = parser.parse_args(argv)
 
     if args.command == "demo":

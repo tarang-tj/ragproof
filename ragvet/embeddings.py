@@ -13,11 +13,15 @@ from typing import Callable, Sequence
 import numpy as np
 
 
-def sentence_transformer_embedder(model: str = "BAAI/bge-small-en-v1.5") -> Callable[[Sequence[str]], np.ndarray]:
-    """Return a normalized-embedding callable backed by a sentence-transformer model."""
+def sentence_transformer_embedder(model: str = "BAAI/bge-small-en-v1.5",
+                                  revision: str | None = None) -> Callable[[Sequence[str]], np.ndarray]:
+    """Return a normalized-embedding callable backed by a sentence-transformer model.
+
+    `revision` pins a Hub commit, so a benchmark score belongs to one exact set of weights.
+    """
     from sentence_transformers import SentenceTransformer
 
-    encoder = SentenceTransformer(model)
+    encoder = SentenceTransformer(model, revision=revision)
 
     def embed(texts: Sequence[str]) -> np.ndarray:
         vecs = encoder.encode(list(texts), normalize_embeddings=True,

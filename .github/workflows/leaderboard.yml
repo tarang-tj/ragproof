@@ -1,0 +1,74 @@
+name: leaderboard
+# Monthly: ask the Hugging Face Hub for today's most-downloaded small embedding models, score every
+# revision not yet in leaderboard/results.json on BEIR/scifact (ragvet/leaderboard.py), run the
+# tests, and commit only when files changed AND the tests passed. A failed Hub call, download,
+# benchmark or test opens (or comments on) one issue and commits nothing.
+on:
+  schedule:
+    - cron: "41 9 15 * *"  # the 15th, 09:41 UTC
+  workflow_dispatch:
+    inputs:
+      max_new:
+        description: "Score at most this many new model revisions"
+        default: "2"
+      drill:
+        description: "Failure drill: point the Hub call at a dead address (red run, issue, no commit)"
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  issues: write
+concurrency: leaderboard
+jobs:
+  leaderboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e ".[dev,embeddings]"
+      - name: score new models
+        id: board
+        env:
+          RAGVET_HF_API: ${{ inputs.drill && 'http://127.0.0.1:9/api/models' || '' }}
+        run: |
+          set +e
+          python -m ragvet.leaderboard --max-new "${{ inputs.max_new || '2' }}" | tee board.txt
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -ne 0 ] && [ "$code" -ne 3 ]; then exit "$code"; fi
+      - name: test
+        if: steps.board.outputs.code == '3'
+        run: python -m pytest -q
+      - name: commit
+        if: steps.board.outputs.code == '3'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add leaderboard README.md
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          scored=$(grep '^scored:' board.txt | sed 's/^scored: //')
+          git commit -m "data: monthly embedding leaderboard, scored: ${scored:-nothing new}"
+          git pull --rebase origin main
+          git push
+      - name: close a failure issue once a run succeeds
+        if: success()
+        run: |
+          n=$(gh issue list --state open --search 'in:title "Leaderboard refresh failed"' --json number -q '.[0].number')
+          if [ -n "$n" ]; then gh issue close "$n" --comment "Fixed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; fi
+      - name: open or update the failure issue
+        if: failure()
+        run: |
+          title="Leaderboard refresh failed"
+          { echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; echo;
+            echo "Nothing was committed. The leaderboard keeps its last good state."; echo;
+            tail -n 40 board.txt 2>/dev/null || echo "No output: the run failed before scoring."; } > failure.md
+          n=$(gh issue list --state open --search "in:title \"$title\"" --json number -q '.[0].number')
+          if [ -n "$n" ]; then gh issue comment "$n" --body-file failure.md; else gh issue create --title "$title" --body-file failure.md; fi
+      - run: cat board.txt >> "$GITHUB_STEP_SUMMARY"
+        if: always() && hashFiles('board.txt') != ''
