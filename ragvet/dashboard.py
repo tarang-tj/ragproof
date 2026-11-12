@@ -1,17 +1,17 @@
 """Streamlit dashboard for retrieval-query drift.
 
 Paste a baseline window of queries (what you tested on) and a current window (recent
-production traffic). The app embeds both and runs ragproof's drift detection so you
+production traffic). The app embeds both and runs ragvet's drift detection so you
 can see, at a glance, when your real queries have wandered away from your eval set --
 the moment your retrieval metrics stop meaning anything.
 
-    pip install ragproof[dashboard,benchmark]
-    streamlit run ragproof/dashboard.py
+    pip install ragvet[dashboard,benchmark]
+    streamlit run ragvet/dashboard.py
 """
 import numpy as np
 import streamlit as st
 
-from ragproof.drift import detect_drift
+from ragvet.drift import detect_drift
 
 BASELINE = "When is the final exam?\nHow is the class graded?\nWhat textbook is required?\nWhen are office hours?"
 CURRENT = "Can I use a calculator on the test?\nWhat is the attendance policy?\nWhen is the group project due?\nHow many quizzes are there?"
@@ -19,7 +19,7 @@ CURRENT = "Can I use a calculator on the test?\nWhat is the attendance policy?\n
 
 @st.cache_resource
 def _embedder():
-    from ragproof.benchmarks.beir import model2vec_embedder
+    from ragvet.benchmarks.beir import model2vec_embedder
     return model2vec_embedder()
 
 
@@ -28,8 +28,8 @@ def _lines(text):
 
 
 def main():
-    st.set_page_config(page_title="ragproof drift", page_icon="📊")
-    st.title("ragproof — retrieval query drift")
+    st.set_page_config(page_title="ragvet drift", page_icon="📊")
+    st.title("ragvet — retrieval query drift")
     st.caption("Detect when production queries drift away from your evaluation set.")
 
     col_a, col_b = st.columns(2)

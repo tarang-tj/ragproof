@@ -5,7 +5,7 @@ Works with any BEIR dataset that has a test qrels split (scifact, nfcorpus, fiqa
 sentence-transformer embedder via `embed=` for a stronger number, and an optional
 cross-encoder `reranker=` to reorder the hybrid shortlist.
 
-    python -m ragproof.benchmarks.beir scifact nfcorpus
+    python -m ragvet.benchmarks.beir scifact nfcorpus
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from typing import Callable, Sequence
 import numpy as np
 from rank_bm25 import BM25Okapi
 
-from ragproof.metrics import hit_at_k, mrr, ndcg_at_k, recall_at_k
+from ragvet.metrics import hit_at_k, mrr, ndcg_at_k, recall_at_k
 
 BEIR_URL = "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{name}.zip"
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")

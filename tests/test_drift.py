@@ -1,18 +1,18 @@
-"""Unit tests for ragproof.drift: centroid distance, PSI, and detect_drift."""
+"""Unit tests for ragvet.drift: centroid distance, PSI, and detect_drift."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from ragproof.datasets import load_demo_dataset
-from ragproof.drift import (
+from ragvet.datasets import load_demo_dataset
+from ragvet.drift import (
     centroid_cosine_distance,
     detect_drift,
     embed_queries,
     population_stability_index,
 )
-from ragproof.retrievers import DenseRetriever
+from ragvet.retrievers import DenseRetriever
 
 
 def test_centroid_cosine_distance_identical_windows_is_zero():

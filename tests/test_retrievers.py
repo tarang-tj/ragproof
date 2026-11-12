@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from ragproof.retrievers import DenseRetriever, HybridRetriever, SparseRetriever
+from ragvet.retrievers import DenseRetriever, HybridRetriever, SparseRetriever
 
 TOY_CORPUS = {
     "a": "cats are small domesticated carnivorous mammals",

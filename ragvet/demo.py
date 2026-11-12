@@ -1,4 +1,4 @@
-"""End-to-end offline demo: `python -m ragproof.demo`.
+"""End-to-end offline demo: `python -m ragvet.demo`.
 
 Loads the baked-in demo dataset, evaluates SparseRetriever, DenseRetriever,
 and HybridRetriever (+ lexical/dense reranker) side by side, prints a
@@ -8,10 +8,10 @@ keys, no network calls, no downloaded model weights -- fully deterministic.
 
 from __future__ import annotations
 
-from ragproof.cost import DEFAULT_RATES, estimate_cost
-from ragproof.datasets import load_demo_dataset
-from ragproof.eval_runner import compare_retrievers
-from ragproof.retrievers import DenseRetriever, HybridRetriever, SparseRetriever
+from ragvet.cost import DEFAULT_RATES, estimate_cost
+from ragvet.datasets import load_demo_dataset
+from ragvet.eval_runner import compare_retrievers
+from ragvet.retrievers import DenseRetriever, HybridRetriever, SparseRetriever
 
 K_FOR_HIT_AND_NDCG = 3
 K_FOR_RECALL = 5
@@ -59,7 +59,7 @@ def main() -> None:
     corpus, queries = load_demo_dataset()
     retrievers = build_retrievers(corpus)
 
-    print(f"ragproof demo -- {len(corpus)} docs, {len(queries)} labeled queries, fully offline\n")
+    print(f"ragvet demo -- {len(corpus)} docs, {len(queries)} labeled queries, fully offline\n")
 
     table = compare_retrievers(
         retrievers,
@@ -75,7 +75,7 @@ def main() -> None:
         "\nNote: the dense retriever is a local TF-IDF+SVD stand-in, not a "
         "real semantic embedding model. It exists so this demo runs "
         "offline. Swap in Voyage/Claude embeddings for production "
-        "(see ragproof/retrievers_pgvector_claude.py)."
+        "(see ragvet/retrievers_pgvector_claude.py)."
     )
 
 

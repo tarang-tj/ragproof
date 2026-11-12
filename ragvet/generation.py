@@ -80,7 +80,7 @@ class ClaudeJudge:
     """LLM-as-judge faithfulness / relevance via Claude.
 
     Higher fidelity than the embedding heuristic because it reasons about entailment,
-    not just surface similarity. Requires `pip install ragproof[judge]` and
+    not just surface similarity. Requires `pip install ragvet[judge]` and
     ANTHROPIC_API_KEY. Scores are floats in [0, 1].
     """
 
@@ -88,7 +88,7 @@ class ClaudeJudge:
         try:
             import anthropic  # noqa: F401
         except ImportError as exc:  # pragma: no cover - exercised only with the extra
-            raise ImportError("ClaudeJudge needs `pip install ragproof[judge]`") from exc
+            raise ImportError("ClaudeJudge needs `pip install ragvet[judge]`") from exc
         import anthropic
         self._client = anthropic.Anthropic(api_key=api_key)
         self._model = model

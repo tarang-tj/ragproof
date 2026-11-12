@@ -1,4 +1,4 @@
-"""Unit tests for ragproof.metrics with hand-computed expected values.
+"""Unit tests for ragvet.metrics with hand-computed expected values.
 
 Every expected value below is derived by hand from the standard IR
 formulas (see metrics.py docstrings), not copied from the implementation,
@@ -11,7 +11,7 @@ import math
 
 import pytest
 
-from ragproof.metrics import hit_at_k, mrr, ndcg_at_k, precision_at_k, recall_at_k
+from ragvet.metrics import hit_at_k, mrr, ndcg_at_k, precision_at_k, recall_at_k
 
 RETRIEVED = ["d1", "d2", "d3", "d4", "d5"]
 RELEVANT = {"d2", "d4"}

@@ -4,7 +4,7 @@ These are the production-grade retrievers: a sentence-transformer dense embedder
 (much stronger than the model2vec static default) and a real cross-encoder that
 reorders a shortlist by query-document relevance. They need the heavier `[embeddings]`
 extra (torch + sentence-transformers), so everything imports lazily -- the rest of
-ragproof runs without them.
+ragvet runs without them.
 """
 from __future__ import annotations
 

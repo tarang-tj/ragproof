@@ -7,7 +7,7 @@ import hashlib
 
 import numpy as np
 
-from ragproof.generation import (
+from ragvet.generation import (
     answer_relevance,
     evaluate_answer,
     faithfulness,

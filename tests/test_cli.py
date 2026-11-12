@@ -1,10 +1,10 @@
 """CLI smoke tests -- version, help, and the offline demo (no model downloads)."""
-from ragproof.cli import main
+from ragvet.cli import main
 
 
 def test_version_prints(capsys):
     assert main(["version"]) == 0
-    assert "ragproof" in capsys.readouterr().out
+    assert "ragvet" in capsys.readouterr().out
 
 
 def test_no_command_prints_help(capsys):

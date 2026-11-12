@@ -1,4 +1,6 @@
-# ragproof
+# ragvet
+
+> Renamed from `ragproof`: the PyPI name `ragproof` was already claimed by an unrelated package. The Python package, CLI, and imports are now `ragvet`. The GitHub repo itself is still named `ragproof` (renaming it is a separate step), so the URLs below are unchanged.
 
 [![ci](https://github.com/tarang-tj/ragproof/actions/workflows/ci.yml/badge.svg)](https://github.com/tarang-tj/ragproof/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -8,7 +10,7 @@ Evaluation and retrieval-benchmark harness for RAG systems. Prove retrieval **an
 
 ## Why evals
 
-Most RAG failures are retrieval failures, not generation failures: the model answers badly because the wrong chunks were fetched, not because it reasoned poorly. Most teams shipping LLM apps have no evals at all, so a retrieval regression ships silently and shows up as "the bot got worse" three weeks later with no way to diagnose it. `ragproof` scores retrieval (hit@k, MRR, nDCG, recall), scores the generated answer (faithfulness, relevance), tracks cost, and detects query drift, so you catch regressions before your users do.
+Most RAG failures are retrieval failures, not generation failures: the model answers badly because the wrong chunks were fetched, not because it reasoned poorly. Most teams shipping LLM apps have no evals at all, so a retrieval regression ships silently and shows up as "the bot got worse" three weeks later with no way to diagnose it. `ragvet` scores retrieval (hit@k, MRR, nDCG, recall), scores the generated answer (faithfulness, relevance), tracks cost, and detects query drift, so you catch regressions before your users do.
 
 ## Install
 
@@ -27,16 +29,16 @@ pip install -e ".[dashboard]"       # + streamlit for the drift dashboard
 ## CLI
 
 ```bash
-ragproof demo                                  # offline retrieval demo, no downloads
-ragproof benchmark scifact                     # BEIR benchmark, model2vec dense (keyless)
-ragproof benchmark scifact --embeddings st --rerank   # bge-small + cross-encoder
-ragproof suite scifact nfcorpus                # robustness table across datasets
-ragproof version
+ragvet demo                                  # offline retrieval demo, no downloads
+ragvet benchmark scifact                     # BEIR benchmark, model2vec dense (keyless)
+ragvet benchmark scifact --embeddings st --rerank   # bge-small + cross-encoder
+ragvet suite scifact nfcorpus                # robustness table across datasets
+ragvet version
 ```
 
 ## Retrieval quality (offline demo)
 
-`ragproof demo` loads a baked-in 40-document corpus and 24 labeled queries and evaluates three retrievers, no keys or downloads:
+`ragvet demo` loads a baked-in 40-document corpus and 24 labeled queries and evaluates three retrievers, no keys or downloads:
 
 ```
 retriever          hit@3  mrr    ndcg@3  recall@5
@@ -50,7 +52,7 @@ Hybrid wins because sparse and dense retrieval have complementary failure modes:
 
 ## Answer quality: faithfulness and relevance
 
-Retrieval metrics say the right context was fetched. They say nothing about the answer the LLM then wrote. `ragproof.generation` scores that:
+Retrieval metrics say the right context was fetched. They say nothing about the answer the LLM then wrote. `ragvet.generation` scores that:
 
 - **Faithfulness** — the fraction of the answer's sentences supported by the retrieved context. Low = hallucination.
 - **Answer relevance** — how on-topic the answer is to the question.
@@ -58,8 +60,8 @@ Retrieval metrics say the right context was fetched. They say nothing about the 
 Two backends: a keyless embedding heuristic (default) and a Claude LLM-as-judge (`[judge]` extra) for fine-grained factual entailment.
 
 ```python
-from ragproof.generation import evaluate_answer
-from ragproof.benchmarks.beir import model2vec_embedder
+from ragvet.generation import evaluate_answer
+from ragvet.benchmarks.beir import model2vec_embedder
 embed = model2vec_embedder()
 evaluate_answer(question, answer, retrieved_contexts, embed)
 # -> {"faithfulness": 1.0, "answer_relevance": 0.71}
@@ -82,7 +84,7 @@ Hybrid fusion lifts NDCG@10 from 0.560 (BM25) to 0.609. Honest caveat: BM25 here
 
 ### Stronger embeddings (bge-small + cross-encoder rerank)
 
-`ragproof benchmark scifact --embeddings st --rerank` swaps in a real sentence-transformer (`BAAI/bge-small-en-v1.5`) and a cross-encoder reranker (`ms-marco-MiniLM-L-6-v2`):
+`ragvet benchmark scifact --embeddings st --rerank` swaps in a real sentence-transformer (`BAAI/bge-small-en-v1.5`) and a cross-encoder reranker (`ms-marco-MiniLM-L-6-v2`):
 
 ```
 retriever               hit@3  mrr@10  ndcg@10  recall@10
@@ -97,7 +99,7 @@ A real embedder lifts dense NDCG@10 from 0.506 (model2vec) to **0.720** — the 
 
 ### Robustness across datasets
 
-`ragproof suite scifact nfcorpus` — hybrid wins on both:
+`ragvet suite scifact nfcorpus` — hybrid wins on both:
 
 ```
 Robustness -- NDCG@10 across datasets (dense = model2vec)
@@ -110,7 +112,7 @@ hybrid                       0.609       0.293
 
 ### SyllabusAI domain (representative Q&A)
 
-`ragproof.benchmarks.syllabus` evaluates on the actual problem behind [SyllabusAI](https://syllabusai.net) — answering student questions from course syllabi — using a hand-labeled representative set (the live corpus has no ground-truth labels; point a pgvector retriever at it to run on real data):
+`ragvet.benchmarks.syllabus` evaluates on the actual problem behind [SyllabusAI](https://syllabusai.net) — answering student questions from course syllabi — using a hand-labeled representative set (the live corpus has no ground-truth labels; point a pgvector retriever at it to run on real data):
 
 ```
 SyllabusAI domain eval -- 12 syllabus sections, 16 labeled questions
@@ -130,27 +132,27 @@ Note the flip from scifact: on paraphrased student questions, **dense retrieval 
 ## Drift dashboard
 
 ```bash
-streamlit run ragproof/dashboard.py
+streamlit run ragvet/dashboard.py
 ```
 
 Paste a baseline window of queries and a current window; the dashboard embeds both and runs drift detection (PSI + centroid distance) so you can see when production traffic has wandered away from your eval set and your metrics have gone stale.
 
 ## Wire your own stack (pgvector + Claude)
 
-`ragproof/retrievers_pgvector_claude.py` is a clearly-marked integration stub showing the production seam: Supabase pgvector for retrieval, Claude for generation, behind the same `Retriever` interface every retriever here uses. Point `eval_runner.evaluate_retriever()` at it once you fill in your keys.
+`ragvet/retrievers_pgvector_claude.py` is a clearly-marked integration stub showing the production seam: Supabase pgvector for retrieval, Claude for generation, behind the same `Retriever` interface every retriever here uses. Point `eval_runner.evaluate_retriever()` at it once you fill in your keys.
 
 ## What's real vs stand-in
 
 - `SparseRetriever` — real BM25 (`rank_bm25`).
-- `DenseRetriever` — TF-IDF+SVD stand-in for the offline demo; use `ragproof.embeddings.sentence_transformer_embedder` (`[embeddings]`) for real semantic vectors, or model2vec (`[benchmark]`) for a keyless middle ground.
-- Reranker — a lexical/dense blend in the demo; `ragproof.embeddings.cross_encoder_reranker` is a real cross-encoder.
+- `DenseRetriever` — TF-IDF+SVD stand-in for the offline demo; use `ragvet.embeddings.sentence_transformer_embedder` (`[embeddings]`) for real semantic vectors, or model2vec (`[benchmark]`) for a keyless middle ground.
+- Reranker — a lexical/dense blend in the demo; `ragvet.embeddings.cross_encoder_reranker` is a real cross-encoder.
 - `generation.faithfulness` — real embedding-support heuristic; `ClaudeJudge` for entailment-grade scoring.
 - `drift.py`, `cost.py` — real math (PSI + centroid cosine; token/$ against a configurable rate table).
 
 ## Project layout
 
 ```
-ragproof/
+ragvet/
   metrics.py          hit@k, recall@k, precision@k, mrr, ndcg@k
   cost.py             token + $ estimator
   retrievers.py       Sparse (BM25), Dense (stand-in), Hybrid (+rerank)
@@ -159,7 +161,7 @@ ragproof/
   eval_runner.py      run / compare retrievers
   drift.py            centroid cosine + PSI drift detection
   dashboard.py        Streamlit drift dashboard
-  cli.py              ragproof CLI
+  cli.py              ragvet CLI
   benchmarks/
     beir.py           generalized BEIR engine (any dataset, pluggable embedder)
     scifact.py        scifact entrypoint

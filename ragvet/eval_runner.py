@@ -13,8 +13,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from ragproof.metrics import hit_at_k, mrr, ndcg_at_k, precision_at_k, recall_at_k
-from ragproof.retrievers import Retriever
+from ragvet.metrics import hit_at_k, mrr, ndcg_at_k, precision_at_k, recall_at_k
+from ragvet.retrievers import Retriever
 
 
 def evaluate_retriever(

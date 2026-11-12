@@ -2,7 +2,7 @@
 
 Shows the production seam: how to wire a Supabase/pgvector similarity
 search retriever, plus Claude for generation, behind the same Retriever
-interface used everywhere else in ragproof (see retrievers.py). This lets
+interface used everywhere else in ragvet (see retrievers.py). This lets
 you swap DenseRetriever -> PgVectorClaudeRetriever with zero changes to
 eval_runner.py, metrics.py, or drift.py.
 

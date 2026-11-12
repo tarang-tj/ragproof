@@ -17,11 +17,11 @@ jobs:
       - name: Tests
         run: python -m pytest -q
       - name: Demo (offline)
-        run: python -m ragproof.demo
+        run: python -m ragvet.demo
 
   docker:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build image
-        run: docker build -t ragproof .
+        run: docker build -t ragvet .

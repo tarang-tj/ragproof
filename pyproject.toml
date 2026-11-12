@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ragproof"
+name = "ragvet"
 version = "0.2.0"
 description = "Evaluation and retrieval-benchmark harness for RAG systems"
 readme = "README.md"
@@ -31,10 +31,10 @@ judge = ["anthropic>=0.39"]
 dashboard = ["streamlit>=1.30"]
 
 [project.scripts]
-ragproof = "ragproof.cli:main"
+ragvet = "ragvet.cli:main"
 
 [project.urls]
 Repository = "https://github.com/tarang-tj/ragproof"
 
 [tool.setuptools.packages.find]
-include = ["ragproof*"]
+include = ["ragvet*"]

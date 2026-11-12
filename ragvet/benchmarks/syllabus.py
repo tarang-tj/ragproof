@@ -2,21 +2,21 @@
 
 SyllabusAI answers student questions from course syllabi. This is a small, hand-
 labeled, representative syllabus-QA set (not the live 500-user corpus -- that has no
-ground-truth labels) so ragproof can be exercised end to end on the actual domain:
+ground-truth labels) so ragvet can be exercised end to end on the actual domain:
 retrieval metrics on real question->section labels, plus a faithfulness contrast
 showing the answer-eval layer flag a hallucinated answer.
 
 To run against the live SyllabusAI corpus, point a retriever at its Supabase/pgvector
-store (see ragproof/retrievers_pgvector_claude.py) and reuse the same metrics.
+store (see ragvet/retrievers_pgvector_claude.py) and reuse the same metrics.
 
-    python -m ragproof.benchmarks.syllabus
+    python -m ragvet.benchmarks.syllabus
 """
 from __future__ import annotations
 
 import numpy as np
 
-from ragproof.generation import faithfulness
-from ragproof.metrics import hit_at_k, mrr, ndcg_at_k, recall_at_k
+from ragvet.generation import faithfulness
+from ragvet.metrics import hit_at_k, mrr, ndcg_at_k, recall_at_k
 
 # --- representative syllabus corpus (id -> section text) ---
 CHUNKS = {
@@ -58,7 +58,7 @@ QUERIES = {
 def run():
     ids = list(CHUNKS)
     docs = [CHUNKS[i] for i in ids]
-    from ragproof.benchmarks.beir import model2vec_embedder, _minmax
+    from ragvet.benchmarks.beir import model2vec_embedder, _minmax
     from rank_bm25 import BM25Okapi
 
     embed = model2vec_embedder()

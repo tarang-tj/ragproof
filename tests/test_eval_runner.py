@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from ragproof.datasets import load_demo_dataset
-from ragproof.eval_runner import compare_retrievers, evaluate_retriever
-from ragproof.retrievers import DenseRetriever, HybridRetriever, SparseRetriever
+from ragvet.datasets import load_demo_dataset
+from ragvet.eval_runner import compare_retrievers, evaluate_retriever
+from ragvet.retrievers import DenseRetriever, HybridRetriever, SparseRetriever
 
 
 @pytest.fixture(scope="module")

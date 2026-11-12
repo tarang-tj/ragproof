@@ -1,10 +1,10 @@
-"""Unit tests for ragproof.cost -- hand-computed dollar amounts."""
+"""Unit tests for ragvet.cost -- hand-computed dollar amounts."""
 
 from __future__ import annotations
 
 import pytest
 
-from ragproof.cost import DEFAULT_RATES, estimate_cost
+from ragvet.cost import DEFAULT_RATES, estimate_cost
 
 
 def test_estimate_cost_matches_hand_computation():
