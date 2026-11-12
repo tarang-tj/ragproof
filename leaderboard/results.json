@@ -52,6 +52,7 @@
   ],
   "scores": {
     "datasocietyco/bge-base-en-v1.5-course-recommender-v5@2b069eed51ce7bc2beeaa7e3eea1a01c48ef3d29": {
+      "limit_s": 1500,
       "scored": "2026-11-12",
       "skipped": "projected 56 min to embed 5,183 docs on this CPU"
     },
@@ -80,6 +81,7 @@
       "seconds": 75
     },
     "sentence-transformers/all-distilroberta-v1@842eaed40bee4d61673a81c92d5689a8fed7a09f": {
+      "limit_s": 1500,
       "scored": "2026-11-12",
       "skipped": "projected 28 min to embed 5,183 docs on this CPU"
     },
