@@ -14,16 +14,23 @@ Most RAG failures are retrieval failures, not generation failures: the model ans
 
 ## Install
 
-Install from a clone of this repository. This project is not published on PyPI. It was renamed from `ragproof` because a `ragproof` package there is an unrelated project by another author, so `pip install ragproof` will not install this code; the package, CLI and imports are `ragvet`, and the GitHub repo keeps its old name.
+Install from PyPI as `ragvet` (https://pypi.org/project/ragvet/). It was renamed from `ragproof` because a `ragproof` package there is an unrelated project by another author, so `pip install ragproof` will not install this code; the package, CLI and imports are `ragvet`, and the GitHub repo keeps its old name.
+
+```bash
+pip install ragvet                  # core (offline demo + CLI)
+pip install "ragvet[benchmark]"     # + model2vec for keyless BEIR benchmarks
+pip install "ragvet[embeddings]"    # + sentence-transformers for real dense/rerank
+pip install "ragvet[judge]"         # + anthropic for LLM-as-judge faithfulness
+pip install "ragvet[dashboard]"     # + streamlit for the drift dashboard
+ragvet demo
+```
+
+To work on the code, install from a clone instead:
 
 ```bash
 git clone https://github.com/tarang-tj/ragproof.git
 cd ragproof
-pip install -e .                    # core (offline demo + CLI)
-pip install -e ".[benchmark]"       # + model2vec for keyless BEIR benchmarks
-pip install -e ".[embeddings]"      # + sentence-transformers for real dense/rerank
-pip install -e ".[judge]"           # + anthropic for LLM-as-judge faithfulness
-pip install -e ".[dashboard]"       # + streamlit for the drift dashboard
+pip install -e ".[dev]"
 ```
 
 ## CLI
@@ -199,7 +206,7 @@ tests/                metrics, eval_runner, cost, drift, retrievers, generation,
 ## Tests
 
 ```bash
-pip install -e ".[dev]" && pytest -q      # 54 tests, no mocks, no network
+pip install -e ".[dev]" && pytest -q      # 62 tests, no mocks, no network
 ```
 
 ## License
