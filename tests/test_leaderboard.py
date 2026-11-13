@@ -117,3 +117,12 @@ def test_a_dead_api_fails_loud(monkeypatch):
     monkeypatch.setenv("RAGVET_HF_API", "http://127.0.0.1:9/api/models")
     with pytest.raises(OSError):
         lb.fetch_models()
+
+
+def test_outcome_separates_scored_from_too_slow():
+    state = {"current": [{"model": "a", "sha": "1"}, {"model": "b", "sha": "2"}],
+             "scores": {"a@1": {"ndcg10": 0.7}, "b@2": {"skipped": "projected 56 min", "limit_s": 1500}}}
+    assert lb.outcome(state, ["a", "b"]) == "a; too slow: b"
+    assert lb.outcome(state, ["b"]) == "nothing new; too slow: b"
+    assert lb.outcome(state, ["a"]) == "a"
+    assert lb.outcome(state, []) == "nothing new"

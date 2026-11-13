@@ -124,6 +124,15 @@ def update(state: dict, cands: list[dict], max_new: int, scorer=score, budget_s:
     return done
 
 
+def outcome(state: dict, done: list[str]) -> str:
+    """One line for the bot commit: models scored this run, then any found too slow (not scored)."""
+    keys = {c["model"]: f"{c['model']}@{c['sha']}" for c in state["current"]}
+    slow = [m for m in done if state["scores"][keys[m]].get("skipped")]
+    ok = [m for m in done if m not in slow]
+    line = ", ".join(ok) or "nothing new"
+    return f"{line}; too slow: {', '.join(slow)}" if slow else line
+
+
 def table(state: dict) -> str:
     """Current models ranked by nDCG@10; unscored ones listed last as pending."""
     rows = []
@@ -182,7 +191,7 @@ def main(argv=None) -> int:
         checked = state["checked"] = datetime.now(timezone.utc).strftime("%Y-%m")
         done = update(state, cands, a.max_new, budget_s=a.budget_min * 60,
                       on_scored=lambda st: (write(st, checked), print("scored", list(st["scores"])[-1], flush=True)))
-        print("scored:", ", ".join(done) or "nothing new")
+        print("scored:", outcome(state, done))
     write(state, checked)
     print(render(state, checked))
     after = [p.read_text() for p in (RESULTS, BOARD, README)]
