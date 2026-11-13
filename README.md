@@ -206,7 +206,7 @@ tests/                metrics, eval_runner, cost, drift, retrievers, generation,
 ## Tests
 
 ```bash
-pip install -e ".[dev]" && pytest -q      # 62 tests, no mocks, no network
+pip install -e ".[dev]" && pytest -q      # 63 tests, no mocks, no network
 ```
 
 ## License
